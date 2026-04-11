@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Weekly Temperature Forecast in College Station + D3 tutorial </title>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <style>
+    body {
+      background: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    #chart div{
+            font: 10px sans-serif;
+            background-color: steelblue;
+            text-align: right;
+            padding: 3px;
+            margin: 1px;
+            color: white;
+        }
+        
+    .line-high { fill: none; stroke: steelblue; stroke-width: 2px; }
+    .line-low  { fill: none; stroke: orange;    stroke-width: 2px; }
+    .dot-high  { fill: steelblue; }
+    .dot-low   { fill: orange; }
+    .axis path, .axis line { stroke: #333; }
+    .axis text { fill: #333; font-size: 11px; }
+    .grid line { stroke: #e0e0e0; }
+    .grid path { stroke: none; }
+  </style>
+</head>
+<body>
+
+  <div id="chart"></div>
+
+  <div id="linechart"></div>
+
+  <script>
+    var data = [30, 86, 168, 281, 303, 365];
+
+    d3.select("#chart")
+      .selectAll("div")
+      .data(data)
+        .enter()
+        .append("div")
+        .style("width", function(d) { return d + "px"; })
+        .text(function(d) { return d; });
+
+
+    var days = ["Sat","Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    var high = [82, 81, 81, 70, 77, 78, 79, 80];
+    var low  = [67, 59, 50, 47, 51, 60, 66, 66];
+    var tempData = days.map(function(d, i) { return { day: d, i: i, high: high[i], low: low[i] }; });
+
+    var margin = { top: 50, right: 40, bottom: 65, left: 60 };
+    var width  = 600 - margin.left - margin.right;
+    var height = 400 - margin.top  - margin.bottom;
+
+    var svg = d3.select("#linechart")
+      .append("svg")
+      .attr("width",  width  + margin.left + margin.right)
+      .attr("height", height + margin.top  + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.append("text")
+      .attr("x", width / 2)
+      .attr("y", -22)
+      .attr("text-anchor", "middle")
+      .style("font-size", "15px")
+      .text("Weekly Temperature Forecast in College Station");
+
+    var x = d3.scalePoint()
+      .domain(d3.range(8))
+      .range([0, width])
+      .padding(0.3);
+
+    var y = d3.scaleLinear()
+      .domain([40, 90])
+      .range([height, 0]);
+
+    svg.append("g").attr("class", "grid")
+      .call(d3.axisLeft(y).tickSize(-width).tickFormat("").ticks(6));
+
+    svg.append("g").attr("class", "axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x).tickFormat(function(d, i) { return days[i]; }));
+
+    svg.append("g").attr("class", "axis")
+      .call(d3.axisLeft(y).ticks(6));
+
+    svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", -50)
+      .attr("x", -(height / 2))
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .text("Temperature (°F)");
+
+    var lineHigh = d3.line()
+      .x(function(d, i) { return x(i); })
+      .y(function(d) { return y(d.high); });
+
+    var lineLow = d3.line()
+      .x(function(d, i) { return x(i); })
+      .y(function(d) { return y(d.low); });
+
+    svg.append("path").datum(tempData).attr("class", "line-high").attr("d", lineHigh);
+    svg.append("path").datum(tempData).attr("class", "line-low").attr("d", lineLow);
+
+    svg.selectAll(".dot-high").data(tempData).enter().append("circle")
+      .attr("class", "dot-high")
+      .attr("cx", function(d, i) { return x(i); })
+      .attr("cy", function(d) { return y(d.high); })
+      .attr("r", 4);
+
+    svg.selectAll(".lbl-high").data(tempData).enter().append("text")
+      .attr("x", function(d, i) { return x(i); })
+      .attr("y", function(d) { return y(d.high) - 9; })
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .style("fill", "steelblue")
+      .text(function(d) { return d.high; });
+
+    svg.selectAll(".dot-low").data(tempData).enter().append("circle")
+      .attr("class", "dot-low")
+      .attr("cx", function(d, i) { return x(i); })
+      .attr("cy", function(d) { return y(d.low); })
+      .attr("r", 4);
+
+    svg.selectAll(".lbl-low").data(tempData).enter().append("text")
+      .attr("x", function(d, i) { return x(i); })
+      .attr("y", function(d) { return y(d.low) + 18; })
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .style("fill", "orange")
+      .text(function(d) { return d.low; });
+
+    var leg = svg.append("g")
+      .attr("transform", "translate(" + (width/2 - 65) + "," + (height + 40) + ")");
+    leg.append("rect").attr("x", 0).attr("y", -4).attr("width", 18).attr("height", 3).attr("fill", "steelblue");
+    leg.append("text").attr("x", 24).attr("y", 0).style("font-size", "12px").text("Highest");
+    leg.append("rect").attr("x", 85).attr("y", -4).attr("width", 18).attr("height", 3).attr("fill", "orange");
+    leg.append("text").attr("x", 109).attr("y", 0).style("font-size", "12px").text("Lowest");
+  </script>
+</body>
+</html>
